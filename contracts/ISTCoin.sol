@@ -1,5 +1,6 @@
 pragma solidity ^0.4.24;
 
+// File: contracts/YOACoin.sol
 
 library SafeMath {
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -46,7 +47,7 @@ contract ERC20Basic {
     function totalSupply() public view returns (uint256);
     function balanceOf(address who) public view returns (uint256);
     function transfer(address to, uint256 value) public returns (bool);
-    
+
     event Transfer(address indexed from, address indexed to, uint256 value);
 }
 contract ERC20 is ERC20Basic {
@@ -63,18 +64,18 @@ contract BasicToken is ERC20Basic, Ownable {
     uint256 public privatePreSale;
     uint256 public openPreSale;
     uint256 public openSale;
-    
-    uint256 public ICOstarttime = 1533128400;
-    uint256 public ICOendtime =   1542204000;
-    //1533128400   //2018.8.1 August 1, 2018
-    //1542204000   //2018.11.14 Nov 14, 2018
+
+    uint256 public ICOstarttime = 1551750195;
+    uint256 public ICOendtime =   1551750179;
+    //1551750195   //2018.11.1
+    //1551750179   //2018.12.1
     /**
     * @dev total number of tokens in existence
     */
     function totalSupply() public view returns (uint256) {
         return totalSupply_;
     }
-    
+
     function ICOactive() public view returns (bool success) {
        return ICOstarttime < now && now < ICOendtime;
     }
@@ -86,16 +87,16 @@ contract BasicToken is ERC20Basic, Ownable {
     function transfer(address _to, uint256 _value) public returns (bool) {
         require(_to != address(0));
         require(_value <= balances[msg.sender]);
-    if(msg.sender == owner){
+	if(msg.sender == owner){
             if(now >= 1533128400 && now < 1534337940){
                 privatePreSale = privatePreSale.sub(_value);
             } else if(now >= 1534338000 && now < 1535547600){
                 openPreSale = openPreSale.sub(_value);
-            }  else if(now > 1536152400 && now < 1542204000){ 
+            }  else{
                 openSale = openSale.sub(_value);
-            } 
+            }
         }
-        
+
         // SafeMath.sub will throw if there is not enough balance.
         balances[msg.sender] = balances[msg.sender].sub(_value);
         balances[_to] = balances[_to].add(_value);
@@ -114,13 +115,44 @@ contract BasicToken is ERC20Basic, Ownable {
 contract StandardToken is ERC20, BasicToken {
     mapping(address => mapping(address => uint256)) internal allowed;
     
+    // list of receiver accounts
+    address[] public receivers;
+    bool private unFreeze;
+
     mapping (address => bool) public frozenAccount;
-    
+
     event FrozenFunds(address target, bool frozen);
-       
+    event AccountFrozenError();
+
     function freezeAccount(address target, bool freeze) onlyOwner public {
         frozenAccount[target] = freeze;
         emit FrozenFunds(target, freeze);
+    }
+
+    // unfreeze all accounts
+    function unFreezeAll() public onlyOwner {
+        unFreeze = true;
+    }
+
+    function transfer(address _to, uint256 _value) public returns (bool) {
+        // source account should not be frozen if contract is in not open state
+        if (frozenAccount[msg.sender] && !unFreeze) {
+            emit AccountFrozenError();
+            return false;
+        }
+        
+        // transfer fund first if sender is not frozen
+        require(super.transfer(_to, _value), "Transfer failed.");
+
+        // record the receiver address into list
+        receivers.push(_to);
+        
+        // automatically freeze receiver that is not whitelisted
+        if (frozenAccount[_to] == false && !unFreeze) {
+            frozenAccount[_to] = true;
+            emit FrozenFunds(_to, true);
+        }
+        return true;
     }
     /**
      * @dev Transfer tokens from one address to another
@@ -135,7 +167,7 @@ contract StandardToken is ERC20, BasicToken {
         require (!ICOactive());
         require(!frozenAccount[_from]);                     // Check if sender is frozen
         require(!frozenAccount[_to]);                       // Check if recipient is frozen
-    
+
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
         allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
@@ -218,20 +250,22 @@ contract BurnableToken is BasicToken {
         emit Burn(burner, _value);
     }
 }
- 
+
 contract ISTCoin is StandardToken, BurnableToken {
     string public constant name = "ISTCoin";
     string public constant symbol = "IST";
     uint8 public constant decimals = 8;
-    
-    // Total Supply: 1 Billion
+
     uint256 public constant INITIAL_SUPPLY = 200000000 * (10 ** uint256(decimals));
     constructor () public {
         totalSupply_ = INITIAL_SUPPLY;
         balances[msg.sender] = INITIAL_SUPPLY;
         privatePreSale = 60000000 * (10 ** uint256(decimals));
         openPreSale = 60000000 * (10 ** uint256(decimals));
-        openSale = 630000000 * (10 ** uint256(decimals));
+        openSale = 80000000 * (10 ** uint256(decimals));
         emit Transfer(0x0, msg.sender, INITIAL_SUPPLY);
+
+	// frozen by default
+        unFreeze = false;
     }
 }
