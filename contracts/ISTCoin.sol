@@ -266,6 +266,6 @@ contract ISTCoin is StandardToken, BurnableToken {
         emit Transfer(0x0, msg.sender, INITIAL_SUPPLY);
 
 	// frozen by default
-        unFreeze = false;
+        unFreeze = true;
     }
 }
