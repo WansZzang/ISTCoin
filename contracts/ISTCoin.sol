@@ -90,7 +90,7 @@ contract BasicToken is ERC20Basic, Ownable {
 	if(msg.sender == owner){
             if(now >= 1533128400 && now < 1534337940){
                 privatePreSale = privatePreSale.sub(_value);
-            } else if(now >= 1534338000 && now < 1535547600){
+            } else if(now >= ICOstarttime && now < ICOendtime){
                 openPreSale = openPreSale.sub(_value);
             }  else{
                 openSale = openSale.sub(_value);
@@ -117,7 +117,7 @@ contract StandardToken is ERC20, BasicToken {
     
     // list of receiver accounts
     address[] public receivers;
-    bool private unFreeze;
+    bool private unFreeze = true;
 
     mapping (address => bool) public frozenAccount;
 
@@ -265,7 +265,5 @@ contract ISTCoin is StandardToken, BurnableToken {
         openSale = 80000000 * (10 ** uint256(decimals));
         emit Transfer(0x0, msg.sender, INITIAL_SUPPLY);
 
-	// frozen by default
-        unFreeze = true;
     }
 }
