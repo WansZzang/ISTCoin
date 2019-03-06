@@ -92,9 +92,11 @@ contract BasicToken is ERC20Basic, Ownable {
                 privatePreSale = privatePreSale.sub(_value);
             } else if(now >= ICOstarttime && now < ICOendtime){
                 openPreSale = openPreSale.sub(_value);
-            }  else{
+            } else if( ICOendtime < now ){
                 openSale = openSale.sub(_value);
-            }
+            }else{
+		return;
+	    }
         }
 
         // SafeMath.sub will throw if there is not enough balance.
