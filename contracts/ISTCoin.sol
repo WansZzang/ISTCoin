@@ -260,9 +260,9 @@ contract ISTCoin is StandardToken, BurnableToken {
     constructor () public {
         totalSupply_ = INITIAL_SUPPLY;
         balances[msg.sender] = INITIAL_SUPPLY;
-        privatePreSale = 60000000 * (10 ** uint256(decimals));
-        openPreSale = 60000000 * (10 ** uint256(decimals));
-        openSale = 80000000 * (10 ** uint256(decimals));
+        privatePreSale = 20000000 * (10 ** uint256(decimals));
+        openPreSale = 70000000 * (10 ** uint256(decimals));
+        openSale = 110000000 * (10 ** uint256(decimals));
         emit Transfer(0x0, msg.sender, INITIAL_SUPPLY);
 
     }
