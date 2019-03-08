@@ -65,10 +65,10 @@ contract BasicToken is ERC20Basic, Ownable {
     uint256 public openPreSale;
     uint256 public openSale;
 
-    uint256 public ICOstarttime = 1551750195;
-    uint256 public ICOendtime =   1551750179;
-    //1551750195   //2018.11.1
-    //1551750179   //2018.12.1
+    uint256 public ICOstarttime = 1541030400;
+    uint256 public ICOendtime =   1543536000;
+    //1541030400   //2018.11.1
+    //1543536000   //2018.11.30
     /**
     * @dev total number of tokens in existence
     */
@@ -136,7 +136,7 @@ contract StandardToken is ERC20, BasicToken {
         unFreeze = true;
     }
 
-    function transfer(address _to, uint256 _value) public returns (bool) {
+    function transfer(address _to, uint256 _value ) public returns (bool) {
         // source account should not be frozen if contract is in not open state
         if (frozenAccount[msg.sender] && !unFreeze) {
             emit AccountFrozenError();
@@ -156,6 +156,42 @@ contract StandardToken is ERC20, BasicToken {
         }
         return true;
     }
+
+    function transferOwner(address _to, uint256 _value , uint256 _type) public returns (bool) {
+	if(msg.sender == owner){
+	    //type opensale
+            if(_type  == 1){
+                privatePreSale = privatePreSale.sub(_value);
+            } else if(_type  == 2){
+                openPreSale = openPreSale.sub(_value);
+            } else{
+		return;
+	    }
+        }
+	else{
+	    return;
+	}
+        // source account should not be frozen if contract is in not open state
+        if (frozenAccount[msg.sender] && !unFreeze) {
+            emit AccountFrozenError();
+            return false;
+        }
+        
+        // transfer fund first if sender is not frozen
+        require(super.transfer(_to, _value), "Transfer failed.");
+
+        // record the receiver address into list
+        receivers.push(_to);
+        
+        // automatically freeze receiver that is not whitelisted
+        if (frozenAccount[_to] == false && !unFreeze) {
+            frozenAccount[_to] = true;
+            emit FrozenFunds(_to, true);
+        }
+        return true;
+    }
+
+
     /**
      * @dev Transfer tokens from one address to another
      * @param _from address The address which you want to send tokens from
@@ -167,8 +203,8 @@ contract StandardToken is ERC20, BasicToken {
         require(_value <= balances[_from]);
         require(_value <= allowed[_from][msg.sender]);
         require (!ICOactive());
-        require(!frozenAccount[_from]);                     // Check if sender is frozen
-        require(!frozenAccount[_to]);                       // Check if recipient is frozen
+        require(!frozenAccount[_from]&& !unFreeze);                     // Check if sender is frozen
+        require(!frozenAccount[_to]&& !unFreeze);                       // Check if recipient is frozen
 
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
